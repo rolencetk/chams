@@ -2922,5 +2922,119 @@
       });
     });
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c6942ba1076d19c',t:'MTc2OTg2MzA0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c6942ba1076d19c',t:'MTc2OTg2MzA0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+ 
+ <script>
+let selectedService = "";
+let uploadedFiles = [];
+
+function selectService(service) {
+  selectedService = service;
+  document.getElementById("service-selection").style.display = "none";
+  document.getElementById("order-form-container").style.display = "block";
+
+  const title = document.getElementById("form-title");
+  title.textContent =
+    service === "accounting"
+      ? "طلب خدمة المحاسبة"
+      : "طلب خدمة المالية";
+}
+
+function backToSelection() {
+  document.getElementById("order-form-container").style.display = "none";
+  document.getElementById("service-selection").style.display = "block";
+  document.querySelector(".order-form").reset();
+  uploadedFiles = [];
+  renderFiles();
+}
+
+const fileInput = document.getElementById("file-input");
+const uploadArea = document.getElementById("file-upload-area");
+
+fileInput.addEventListener("change", handleFiles);
+
+uploadArea.addEventListener("dragover", e => {
+  e.preventDefault();
+  uploadArea.classList.add("dragover");
+});
+
+uploadArea.addEventListener("dragleave", () => {
+  uploadArea.classList.remove("dragover");
+});
+
+uploadArea.addEventListener("drop", e => {
+  e.preventDefault();
+  uploadArea.classList.remove("dragover");
+  handleFiles({ target: { files: e.dataTransfer.files } });
+});
+
+function handleFiles(e) {
+  const files = Array.from(e.target.files);
+
+  for (let file of files) {
+    if (uploadedFiles.length >= 10) break;
+    if (file.size <= 5 * 1024 * 1024) {
+      uploadedFiles.push(file);
+    }
+  }
+  renderFiles();
+}
+
+function renderFiles() {
+  const container = document.getElementById("uploaded-files");
+  const list = document.getElementById("files-list");
+  const count = document.getElementById("files-count");
+
+  list.innerHTML = "";
+  count.textContent = uploadedFiles.length + " ملف";
+
+  if (uploadedFiles.length === 0) {
+    container.style.display = "none";
+    return;
+  }
+
+  container.style.display = "block";
+
+  uploadedFiles.forEach((file, index) => {
+    const div = document.createElement("div");
+    div.className = "file-item";
+    div.innerHTML = `
+      <span>${file.name}</span>
+      <button type="button" onclick="removeFile(${index})">✕</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function removeFile(index) {
+  uploadedFiles.splice(index, 1);
+  renderFiles();
+}
+
+async function handleOrderForm(event) {
+  event.preventDefault();
+
+  const form = event.target;
+  const formData = new FormData(form);
+
+  formData.append("serviceType", selectedService);
+
+  uploadedFiles.forEach(file => {
+    formData.append("files", file);
+  });
+
+  const response = await fetch("YOUR_APPS_SCRIPT_WEBAPP_URL", {
+    method: "POST",
+    body: formData
+  });
+
+  if (response.ok) {
+    alert("تم إرسال الطلب بنجاح ✅");
+    backToSelection();
+  } else {
+    alert("حدث خطأ أثناء الإرسال ❌");
+  }
+}
+</script>
+</body>
 </html>
