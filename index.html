@@ -2928,18 +2928,16 @@
 let selectedService = "";
 let uploadedFiles = [];
 
+// اختيار الخدمة
 function selectService(service) {
   selectedService = service;
   document.getElementById("service-selection").style.display = "none";
   document.getElementById("order-form-container").style.display = "block";
-
-  const title = document.getElementById("form-title");
-  title.textContent =
-    service === "accounting"
-      ? "طلب خدمة المحاسبة"
-      : "طلب خدمة المالية";
+  document.getElementById("form-title").textContent =
+    service === "accounting" ? "طلب خدمة المحاسبة" : "طلب خدمة المالية";
 }
 
+// العودة للاختيار
 function backToSelection() {
   document.getElementById("order-form-container").style.display = "none";
   document.getElementById("service-selection").style.display = "block";
@@ -2948,6 +2946,7 @@ function backToSelection() {
   renderFiles();
 }
 
+// الملفات
 const fileInput = document.getElementById("file-input");
 const uploadArea = document.getElementById("file-upload-area");
 
@@ -2957,11 +2956,9 @@ uploadArea.addEventListener("dragover", e => {
   e.preventDefault();
   uploadArea.classList.add("dragover");
 });
-
 uploadArea.addEventListener("dragleave", () => {
   uploadArea.classList.remove("dragover");
 });
-
 uploadArea.addEventListener("drop", e => {
   e.preventDefault();
   uploadArea.classList.remove("dragover");
@@ -2970,12 +2967,9 @@ uploadArea.addEventListener("drop", e => {
 
 function handleFiles(e) {
   const files = Array.from(e.target.files);
-
   for (let file of files) {
     if (uploadedFiles.length >= 10) break;
-    if (file.size <= 5 * 1024 * 1024) {
-      uploadedFiles.push(file);
-    }
+    if (file.size <= 5 * 1024 * 1024) uploadedFiles.push(file);
   }
   renderFiles();
 }
@@ -2992,16 +2986,13 @@ function renderFiles() {
     container.style.display = "none";
     return;
   }
-
   container.style.display = "block";
 
   uploadedFiles.forEach((file, index) => {
     const div = document.createElement("div");
     div.className = "file-item";
-    div.innerHTML = `
-      <span>${file.name}</span>
-      <button type="button" onclick="removeFile(${index})">✕</button>
-    `;
+    div.innerHTML = `<span>${file.name}</span>
+      <button type="button" onclick="removeFile(${index})">✕</button>`;
     list.appendChild(div);
   });
 }
@@ -3011,30 +3002,43 @@ function removeFile(index) {
   renderFiles();
 }
 
+// تحويل الملفات إلى Base64
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ name: file.name, type: file.type, content: reader.result.split(",")[1] });
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+  });
+}
+
+// إرسال النموذج
 async function handleOrderForm(event) {
   event.preventDefault();
-
   const form = event.target;
-  const formData = new FormData(form);
+  const formData = Object.fromEntries(new FormData(form).entries());
+  formData.serviceType = selectedService;
 
-  formData.append("serviceType", selectedService);
+  // تحويل الملفات
+  const filesBase64 = await Promise.all(uploadedFiles.map(fileToBase64));
+  formData.files = filesBase64;
 
-  uploadedFiles.forEach(file => {
-    formData.append("files", file);
-  });
-
-  const response = await fetch("https://script.google.com/macros/s/AKfycbyrmVt_K1-MDp97fA29QcdpyEdzEtEpHecMjpcJbGE4qMGYQTL514dG7aaWtGBxdMep/exec", {
+  const response = await fetch("YOUR_APPS_SCRIPT_WEB_APP_URL", {
     method: "POST",
-    body: formData
+    body: JSON.stringify(formData),
+    headers: { "Content-Type": "application/json" }
   });
 
-  if (response.ok) {
+  const result = await response.json();
+  if (result.success) {
     alert("تم إرسال الطلب بنجاح ✅");
     backToSelection();
   } else {
     alert("حدث خطأ أثناء الإرسال ❌");
+    console.log(result);
   }
 }
 </script>
+
 </body>
 </html>
